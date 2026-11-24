@@ -1,0 +1,22 @@
+:root {
+  --zl-bg: #171719;
+  --zl-surface: #242427;
+  --zl-surface-hover: #303034;
+
+  --zl-white: #f4f4f4;
+  --zl-muted: #929296;
+
+  --zl-red: #c8102e;
+  --zl-red-hover: #a90d26;
+
+  --zl-border: rgba(244, 244, 244, 0.1);
+
+  --radius-xs: 12px;
+  --radius-sm: 18px;
+  --radius-md: 24px;
+  --radius-lg: 32px;
+  --radius-xl: 40px;
+  --radius-pill: 9999px;
+
+  --transition: 0.25s ease;
+}

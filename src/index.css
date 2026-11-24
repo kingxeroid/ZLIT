@@ -1,0 +1,419 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  font-family: "DM Sans", sans-serif;
+  background: #171719;
+  color: #f4f4f4;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: #171719;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+::selection {
+  background: #c8102e;
+  color: #fff;
+}
+
+@layer components {
+  .zl-pill {
+    @apply rounded-pill px-5 py-2.5 text-xs font-semibold transition duration-200;
+  }
+
+  .zl-primary {
+    @apply zl-pill bg-zlit-red text-white hover:bg-red-800;
+  }
+
+  .zl-secondary {
+    @apply zl-pill bg-zlit-surface text-zlit-white hover:bg-zlit-hover;
+  }
+
+  .zl-input {
+    @apply w-full rounded-pill border border-white/10 bg-zlit-surface px-5 py-3 text-sm outline-none transition focus:border-zlit-red;
+  }
+
+  .zl-card {
+    @apply rounded-card bg-zlit-surface;
+  }
+}
+
+/* ========================================
+   ZLIT NAVBAR
+======================================== */
+
+.zl-navbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  width: 100%;
+  background: rgba(23, 23, 25, 0.92);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.zl-nav-inner {
+  width: 100%;
+  max-width: 1440px;
+  min-height: 76px;
+  margin: 0 auto;
+  padding: 0 5%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px;
+}
+
+.zl-logo {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 25px;
+  font-weight: 700;
+  letter-spacing: -1.5px;
+  color: #f4f4f4;
+}
+
+.zl-logo span {
+  color: #c8102e;
+}
+
+.zl-nav-links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 34px;
+}
+
+.zl-nav-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 0;
+  color: #929296;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: color 0.2s ease;
+}
+
+.zl-nav-link:hover,
+.zl-nav-link.active {
+  color: #f4f4f4;
+}
+
+.zl-nav-link.active::after {
+  content: "";
+  position: absolute;
+  bottom: 2px;
+  left: 0;
+  width: 18px;
+  height: 2px;
+  border-radius: 10px;
+  background: #c8102e;
+}
+
+.zl-nav-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.zl-icon-btn,
+.zl-account-btn {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: #f4f4f4;
+  background: transparent;
+  transition: background 0.2s ease;
+}
+
+.zl-icon-btn:hover,
+.zl-account-btn:hover {
+  background: #242427;
+}
+
+.zl-login-btn {
+  min-height: 40px;
+  padding: 0 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #c8102e;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background 0.2s ease;
+}
+
+.zl-login-btn:hover {
+  background: #a50d25;
+}
+
+.zl-mobile-toggle {
+  display: none;
+  width: 42px;
+  height: 42px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  background: #242427;
+  color: #fff;
+  cursor: pointer;
+}
+
+.zl-mobile-menu {
+  display: none;
+}
+
+/* ========================================
+   ZLIT FOOTER
+======================================== */
+
+.zl-footer {
+  width: 100%;
+  margin-top: 80px;
+  padding: 65px 5% 25px;
+  background: #111113;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.zl-footer-grid {
+  max-width: 1440px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr;
+  gap: 50px;
+}
+
+.zl-footer-brand p {
+  margin-top: 14px;
+  color: #929296;
+  font-size: 14px;
+}
+
+.zl-footer-column {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 15px;
+}
+
+.zl-footer-label {
+  margin-bottom: 7px;
+  color: #c8102e;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 3px;
+}
+
+.zl-footer-column a {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #b5b5b9;
+  font-size: 14px;
+  transition: color 0.2s ease;
+}
+
+.zl-footer-column a:hover {
+  color: #fff;
+}
+
+.zl-footer-bottom {
+  max-width: 1440px;
+  margin: 55px auto 0;
+  padding-top: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  color: #77777d;
+  font-size: 11px;
+  letter-spacing: 1px;
+}
+
+/* ========================================
+   TABLET
+======================================== */
+
+@media (max-width: 900px) {
+  .zl-nav-inner {
+    padding: 0 4%;
+  }
+
+  .zl-nav-links {
+    gap: 18px;
+  }
+
+  .zl-nav-link {
+    font-size: 12px;
+  }
+
+  .zl-footer-grid {
+    gap: 30px;
+  }
+}
+
+/* ========================================
+   MOBILE
+======================================== */
+
+@media (max-width: 700px) {
+  .zl-nav-inner {
+    min-height: 66px;
+    padding: 0 20px;
+  }
+
+  .zl-logo {
+    font-size: 23px;
+  }
+
+  .zl-nav-links {
+    display: none;
+  }
+
+  .zl-nav-actions {
+    gap: 5px;
+  }
+
+  .zl-icon-btn,
+  .zl-account-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .zl-login-btn {
+    min-height: 36px;
+    padding: 0 13px;
+    font-size: 12px;
+  }
+
+  .zl-mobile-toggle {
+    display: inline-flex;
+  }
+
+  .zl-mobile-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 12px 20px 22px;
+    background: #1c1c1f;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .zl-mobile-link {
+    width: 100%;
+    min-height: 45px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 0;
+    border-radius: 12px;
+    background: transparent;
+    color: #b5b5b9;
+    text-align: left;
+    font: inherit;
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  .zl-mobile-link:hover,
+  .zl-mobile-link.active {
+    background: #29292d;
+    color: #fff;
+  }
+
+  .zl-mobile-link.active {
+    box-shadow: inset 3px 0 #c8102e;
+  }
+
+  .logout-link {
+    color: #ff667c;
+  }
+
+  .zl-footer {
+    margin-top: 55px;
+    padding: 45px 22px 22px;
+  }
+
+  .zl-footer-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 35px 20px;
+  }
+
+  .zl-footer-brand {
+    grid-column: 1 / -1;
+  }
+
+  .zl-footer-column {
+    gap: 13px;
+  }
+
+  .zl-footer-bottom {
+    margin-top: 38px;
+    flex-wrap: wrap;
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 380px) {
+  .zl-nav-inner {
+    padding: 0 12px;
+  }
+
+  .zl-nav-actions {
+    gap: 2px;
+  }
+
+  .zl-footer-grid {
+    gap: 28px 12px;
+  }
+}

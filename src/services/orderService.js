@@ -2,37 +2,47 @@
 import { supabase } from "./supabase";
 
 export const orderService = {
-  async placeOrder({ customer, items, note = "" }) {
-    // Your existing SQL function reads items from Supabase cart_items.
-    // It does not accept an items parameter.
+  
 
-    const { data: orderId, error: orderError } =
-      await supabase.rpc("create_order", {
-        p_customer_name: customer.fullName,
-        p_customer_email: customer.email || null,
-        p_customer_phone: customer.phone,
-        p_shipping_address: {
-          address_line1: customer.address,
-          city: customer.city,
-          state: customer.state,
-          country: customer.country || "Nigeria",
-        },
-        p_customer_note: note || null,
-      });
+async placeOrder({ customer, items, note = "" }) {
+  const verifiedItems = items.map((item) => ({
+    product_id: item.id,
+    variant_id: item.variant_id || null,
+    quantity: Number(item.quantity),
+  }));
 
-    if (orderError) throw orderError;
+  const { data, error } = await supabase.rpc("place_zlit_order", {
+    p_customer_name: customer.fullName,
+    p_customer_email: customer.email || null,
+    p_customer_phone: customer.phone,
+    p_shipping_address: {
+      address_line1: customer.address,
+      city: customer.city,
+      state: customer.state,
+      country: customer.country || "Nigeria",
+    },
+    p_delivery_fee: 0,
+    p_customer_note: note || null,
+    p_items: verifiedItems,
+  });
 
-    // create_order returns a UUID, not an order object.
-    const { data: order, error: fetchError } = await supabase
-      .from("orders")
-      .select("*")
-      .eq("id", orderId)
-      .single();
+  if (error) throw error;
 
-    if (fetchError) throw fetchError;
+  if (!data?.id) {
+    throw new Error("Order creation failed.");
+  }
 
-    return order;
-  },
+  const { data: order, error: fetchError } = await supabase
+    .from("orders")
+    .select("*")
+    .eq("id", data.id)
+    .single();
+
+  if (fetchError) throw fetchError;
+
+  return order;
+},
+
 
   async getMyOrders(userId) {
     const { data, error } = await supabase

@@ -1,6 +1,13 @@
 
 import { useEffect, useState } from "react";
-import { ImagePlus, X, Star } from "lucide-react";
+import {
+  ImagePlus,
+  X,
+  Star,
+  Layers,
+  LoaderCircle,
+} from "lucide-react";
+import { supabase } from "../../services/supabase";
 
 export default function ProductForm({
   initialData = {},
@@ -23,11 +30,47 @@ export default function ProductForm({
   const [images, setImages] = useState([]);
   const [existingImages, setExistingImages] = useState(
     initialData.existingImages ||
-    initialData.images ||
-    (initialData.image ? [initialData.image] : [])
+      initialData.images ||
+      (initialData.image ? [initialData.image] : [])
   );
 
   const [previews, setPreviews] = useState([]);
+
+  // Collection assignment
+  const [collections, setCollections] = useState([]);
+  const [collectionsLoading, setCollectionsLoading] = useState(true);
+  const [collectionIds, setCollectionIds] = useState(
+    initialData.collectionIds || []
+  );
+
+  useEffect(() => {
+    let active = true;
+
+    const loadCollections = async () => {
+      setCollectionsLoading(true);
+
+      const { data, error } = await supabase
+        .from("collections")
+        .select("id, name, is_active")
+        .order("name");
+
+      if (!active) return;
+
+      if (error) {
+        console.error("COLLECTIONS LOAD ERROR:", error);
+      } else {
+        setCollections(data || []);
+      }
+
+      setCollectionsLoading(false);
+    };
+
+    loadCollections();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Create and clean up local image previews.
   useEffect(() => {
@@ -47,6 +90,14 @@ export default function ProductForm({
     }));
   };
 
+  const toggleCollection = (id) => {
+    setCollectionIds((current) =>
+      current.includes(id)
+        ? current.filter((item) => item !== id)
+        : [...current, id]
+    );
+  };
+
   const addImages = (event) => {
     const selected = Array.from(event.target.files || []);
 
@@ -54,7 +105,6 @@ export default function ProductForm({
 
     setImages((current) => [...current, ...selected]);
 
-    // Allow selecting the same file again later.
     event.target.value = "";
   };
 
@@ -82,6 +132,7 @@ export default function ProductForm({
       existingImages,
       image: images[0] || null,
       existingImage: existingImages[0] || "",
+      collectionIds,
     });
   };
 
@@ -214,6 +265,84 @@ export default function ProductForm({
         {/* RIGHT */}
         <div className="space-y-5">
 
+          {/* COLLECTION ASSIGNMENT */}
+          <section className="rounded-card border border-white/[0.06] bg-zlit-surface p-5">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Layers size={16} className="text-zlit-red" />
+                  <h2 className="text-sm font-semibold">
+                    Product collections
+                  </h2>
+                </div>
+
+                <p className="mt-1 text-[10px] text-zlit-muted">
+                  Assign this product to one or more collections.
+                </p>
+              </div>
+
+              <span className="rounded-full bg-white/5 px-3 py-1 text-[10px] text-zlit-muted">
+                {collectionIds.length} selected
+              </span>
+            </div>
+
+            {collectionsLoading ? (
+              <div className="flex items-center justify-center gap-2 py-8 text-xs text-zlit-muted">
+                <LoaderCircle size={16} className="animate-spin" />
+                Loading collections...
+              </div>
+            ) : collections.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-white/10 px-4 py-7 text-center">
+                <Layers size={23} className="mx-auto mb-2 text-zinc-600" />
+                <p className="text-xs text-zinc-400">
+                  No collections available.
+                </p>
+                <p className="mt-1 text-[10px] text-zinc-600">
+                  Create a collection before assigning products.
+                </p>
+              </div>
+            ) : (
+              <div className="max-h-56 space-y-2 overflow-y-auto pr-1">
+                {collections.map((collection) => {
+                  const selected = collectionIds.includes(collection.id);
+
+                  return (
+                    <label
+                      key={collection.id}
+                      className={`flex cursor-pointer items-center justify-between rounded-xl border px-3 py-3 transition ${
+                        selected
+                          ? "border-zlit-red/50 bg-zlit-red/10"
+                          : "border-white/[0.06] bg-[#1B1B1E] hover:border-white/20"
+                      }`}
+                    >
+                      <div className="flex min-w-0 items-center gap-3">
+                        <input
+                          type="checkbox"
+                          checked={selected}
+                          disabled={disabled}
+                          onChange={() => toggleCollection(collection.id)}
+                          className="h-4 w-4 accent-red-600"
+                        />
+
+                        <span className="truncate text-xs font-medium">
+                          {collection.name}
+                        </span>
+                      </div>
+
+                      <span className={`ml-2 text-[9px] ${
+                        collection.is_active
+                          ? "text-green-400"
+                          : "text-zinc-500"
+                      }`}>
+                        {collection.is_active ? "Active" : "Inactive"}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+
           {/* MULTIPLE IMAGES */}
           <section className="rounded-card border border-white/[0.06] bg-zlit-surface p-5">
             <div className="mb-4 flex items-center justify-between">
@@ -232,7 +361,6 @@ export default function ProductForm({
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              {/* EXISTING IMAGES */}
               {existingImages.map((src, index) => (
                 <div
                   key={`existing-${src}-${index}`}
@@ -263,7 +391,6 @@ export default function ProductForm({
                 </div>
               ))}
 
-              {/* NEW IMAGE PREVIEWS */}
               {previews.map((src, index) => {
                 const isCover =
                   existingImages.length === 0 && index === 0;
@@ -299,7 +426,6 @@ export default function ProductForm({
                 );
               })}
 
-              {/* UPLOAD BUTTON */}
               <label className="flex aspect-square cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-white/15 bg-[#1B1B1E] transition hover:border-zlit-red">
                 <ImagePlus size={25} className="mb-2 text-zlit-muted" />
                 <span className="text-xs font-medium">
@@ -346,7 +472,7 @@ export default function ProductForm({
 
           <button
             type="submit"
-            disabled={disabled}
+            disabled={disabled || collectionsLoading}
             className="w-full rounded-pill bg-zlit-red px-5 py-3 text-xs font-semibold text-white transition hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {submitLabel}

@@ -40,7 +40,41 @@ const ActivityLogs = lazy(() => import("./pages/admin/ActivityLogs"));
 const Settings = lazy(() => import("./pages/admin/Settings"));
 
 function PageLoader() {
-  return <div className="page-loader"><motion.div className="loader-logo" animate={{ scale: [1, 1.08, 1], opacity: [0.6, 1, 0.6] }} transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}>ZL</motion.div><motion.div className="loader-track" initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}/></div>;
+  return (
+    <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#171719]">
+      <motion.div
+        animate={{
+          scale: [1, 1.08, 1],
+          opacity: [0.6, 1, 0.6],
+        }}
+        transition={{
+          duration: 1.4,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
+        className="text-5xl font-black tracking-tighter text-white"
+      >
+        ZL<span className="text-[#C8102E]">IT</span>
+      </motion.div>
+
+      <div className="mt-8 h-[3px] w-32 overflow-hidden rounded-full bg-white/10">
+        <motion.div
+          className="h-full w-full origin-left rounded-full bg-[#C8102E]"
+          initial={{ scaleX: 0 }}
+          animate={{ scaleX: 1 }}
+          transition={{
+            duration: 1.2,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+      </div>
+
+      <p className="mt-4 text-[9px] font-semibold uppercase tracking-[0.3em] text-white/40">
+        Loading experience
+      </p>
+    </div>
+  );
 }
 
 function ProtectedRoute({ children, admin = false }) {

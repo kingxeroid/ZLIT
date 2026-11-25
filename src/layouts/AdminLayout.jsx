@@ -38,7 +38,10 @@ export default function AdminLayout() {
               <X size={18} />
             </button>
 
-            <AdminSidebar onNavigate={() => setSidebarOpen(false)} />
+            <AdminSidebar
+  open={sidebarOpen}
+  onClose={() => setSidebarOpen(false)}
+/>
           </div>
         </div>
       )}

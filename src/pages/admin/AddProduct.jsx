@@ -10,6 +10,7 @@ import {
   X,
   Loader2,
 } from "lucide-react";
+import { supabase } from "../../services/supabase";
 
 import ProductForm from "../../components/products/ProductForm";
 import { productService } from "../../services/productService";
@@ -121,6 +122,28 @@ export default function AddProduct() {
         ],
       });
 
+      // ASSIGN PRODUCT TO SELECTED COLLECTIONS
+if (form.collectionIds?.length > 0) {
+  const assignments = form.collectionIds.map((collectionId) => ({
+    product_id: productId,
+    collection_id: collectionId,
+  }));
+
+  const { error: assignmentError } = await supabase
+    .from("collection_products")
+    .insert(assignments);
+
+  if (assignmentError) {
+    console.error("COLLECTION ASSIGNMENT ERROR:", assignmentError);
+
+    throw new Error(
+      `Product was created, but collection assignment failed: ${assignmentError.message}`
+    );
+  }
+
+  console.log("PRODUCT COLLECTIONS SAVED:", assignments);
+}
+      
       // SUCCESS
       notify(
         "success",

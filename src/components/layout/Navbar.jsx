@@ -1,7 +1,6 @@
 
 import { useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { AnimatePresence, motion } from "framer-motion";
 import {
   Menu,
   X,
@@ -11,17 +10,20 @@ import {
   LogOut,
   Package,
   LayoutDashboard,
-  ChevronRight,
+  Home,
+  Store,
+  Layers,
+  BookImage,
 } from "lucide-react";
 
 import { useAuth } from "../../context/AuthContext";
-import useCart  from "../../hooks/useCart";
+import useCart from "../../hooks/useCart";
 
-const links = [
-  { name: "Home", path: "/" },
-  { name: "Shop", path: "/shop" },
-  { name: "Collections", path: "/collections" },
-  { name: "Lookbook", path: "/lookbook" },
+const exploreLinks = [
+  { name: "Home", path: "/", icon: Home },
+  { name: "Shop", path: "/shop", icon: Store },
+  { name: "Collections", path: "/collections", icon: Layers },
+  { name: "Lookbook", path: "/lookbook", icon: BookImage },
 ];
 
 export default function Navbar() {
@@ -29,7 +31,6 @@ export default function Navbar() {
 
   const { user, profile, logout } = useAuth();
   const { totalItems = 0 } = useCart();
-
   const navigate = useNavigate();
 
   const closeSidebar = () => setMobileOpen(false);
@@ -44,35 +45,48 @@ export default function Navbar() {
     }
   };
 
-  const accountLinks = [
-    { name: "My Profile", path: "/profile", icon: UserRound },
-    { name: "My Orders", path: "/orders", icon: Package },
-    { name: "Wishlist", path: "/wishlist", icon: Heart },
-    ...(profile?.role === "admin"
-      ? [{ name: "Admin Dashboard", path: "/admin", icon: LayoutDashboard }]
-      : []),
-  ];
-
   const accountName =
     profile?.full_name ||
     user?.user_metadata?.full_name ||
     user?.email?.split("@")[0] ||
     "My Account";
 
+  const accountLinks = user
+    ? [
+        { name: "My Profile", path: "/profile", icon: UserRound },
+        { name: "My Orders", path: "/orders", icon: Package },
+        { name: "Wishlist", path: "/wishlist", icon: Heart },
+        ...(profile?.role === "admin"
+          ? [
+              {
+                name: "Admin Dashboard",
+                path: "/admin",
+                icon: LayoutDashboard,
+              },
+            ]
+          : []),
+      ]
+    : [];
+
   const CartLink = ({ mobile = false }) => (
     <Link
       to="/cart"
+      onClick={mobile ? closeSidebar : undefined}
       aria-label={`Shopping bag, ${totalItems} items`}
       className={`relative flex h-10 w-10 items-center justify-center rounded-full transition-colors ${
         mobile
-          ? "text-white"
+          ? "text-white hover:bg-white/5"
           : "text-zlit-muted hover:bg-white/5 hover:text-white"
       }`}
     >
       <ShoppingBag size={19} />
 
       {totalItems > 0 && (
-        <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-zlit-red px-1 text-[10px] font-bold leading-none text-white ring-2 ring-[#171719]">
+        <span
+          className={`absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-zlit-red px-1 text-[10px] font-bold text-white ${
+            mobile ? "ring-2 ring-[#1D1D20]" : "ring-2 ring-[#171719]"
+          }`}
+        >
           {totalItems > 99 ? "99+" : totalItems}
         </span>
       )}
@@ -81,11 +95,9 @@ export default function Navbar() {
 
   return (
     <>
-      {/* HEADER */}
-      <header className="sticky top-0 z-[100] border-b border-white/[0.06] bg-[#171719]/95">
+      {/* Desktop / Mobile Header */}
+      <header className="sticky top-0 z-[100] border-b border-white/[0.06] bg-[#171719]">
         <div className="mx-auto flex min-h-[68px] max-w-[1600px] items-center justify-between gap-5 px-4 sm:px-8 lg:px-12">
-
-          {/* LOGO */}
           <Link
             to="/"
             onClick={closeSidebar}
@@ -98,9 +110,9 @@ export default function Navbar() {
             />
           </Link>
 
-          {/* DESKTOP NAVIGATION */}
+          {/* Desktop Navigation */}
           <nav className="hidden items-center gap-8 md:flex">
-            {links.map((link) => (
+            {exploreLinks.map((link) => (
               <NavLink
                 key={link.path}
                 to={link.path}
@@ -118,7 +130,7 @@ export default function Navbar() {
             ))}
           </nav>
 
-          {/* DESKTOP ACTIONS */}
+          {/* Desktop Actions */}
           <div className="hidden items-center gap-2 md:flex">
             <Link
               to="/wishlist"
@@ -141,6 +153,7 @@ export default function Navbar() {
                 </Link>
 
                 <button
+                  type="button"
                   onClick={handleLogout}
                   className="ml-2 inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2.5 text-xs font-semibold text-zlit-muted transition-colors hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-400"
                 >
@@ -155,16 +168,16 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* MOBILE ACTIONS */}
+          {/* Mobile Actions */}
           <div className="flex items-center gap-2 md:hidden">
-            <CartLink mobile />
+            <CartLink />
 
             <button
               type="button"
               onClick={() => setMobileOpen(true)}
               aria-label="Open navigation"
               aria-expanded={mobileOpen}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-zlit-surface text-white active:scale-95"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-zlit-surface text-white transition-colors hover:bg-white/10 active:scale-95"
             >
               <Menu size={21} />
             </button>
@@ -172,176 +185,208 @@ export default function Navbar() {
         </div>
       </header>
 
-      {/* MOBILE SIDEBAR */}
-      <AnimatePresence>
-        {mobileOpen && (
-          <div className="md:hidden">
-            {/* BACKDROP */}
-            <motion.button
-              type="button"
-              aria-label="Close navigation"
-              onClick={closeSidebar}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
-              className="fixed inset-0 z-[200] bg-black/65"
+      {/* Mobile Backdrop */}
+      <button
+        type="button"
+        aria-label="Close navigation overlay"
+        onClick={closeSidebar}
+        className={`fixed inset-0 z-[200] bg-black/60 transition-opacity duration-200 md:hidden ${
+          mobileOpen
+            ? "visible opacity-100"
+            : "invisible pointer-events-none opacity-0"
+        }`}
+      />
+
+      {/* Mobile Sidebar - AdminSidebar Design */}
+      <aside
+        aria-hidden={!mobileOpen}
+        className={`fixed inset-y-0 left-0 z-[201] flex w-[260px] max-w-[85vw] flex-col border-r border-white/[0.06] bg-[#1D1D20] shadow-2xl transition-transform duration-200 ease-out md:hidden ${
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        {/* Sidebar Header */}
+        <div className="flex h-[76px] shrink-0 items-center justify-between border-b border-white/[0.06] px-6">
+          <Link
+            to="/"
+            onClick={closeSidebar}
+            className="flex items-center"
+          >
+            <img
+              src="/logo.webp"
+              alt="ZLIT"
+              className="h-9 w-auto object-contain"
             />
+          </Link>
 
-            {/* DRAWER */}
-            <motion.aside
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{
-                duration: 0.2,
-                ease: [0.22, 1, 0.36, 1],
-              }}
-              className="fixed right-0 top-0 z-[201] flex h-[100dvh] w-[85%] max-w-[360px] flex-col overflow-hidden border-l border-white/10 bg-[#171719] shadow-2xl"
-              style={{ willChange: "transform" }}
-            >
-              {/* SIDEBAR HEADER */}
-              <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-5 py-5">
-                <Link to="/" onClick={closeSidebar}>
-                  <img
-                    src="/logo.webp"
-                    alt="ZLIT"
-                    className="h-9 w-auto object-contain"
-                  />
-                </Link>
+          <button
+            type="button"
+            onClick={closeSidebar}
+            aria-label="Close navigation"
+            className="rounded-full p-2 text-zlit-muted transition-colors hover:bg-white/5 hover:text-white"
+          >
+            <X size={18} />
+          </button>
+        </div>
 
-                <button
-                  type="button"
-                  onClick={closeSidebar}
-                  aria-label="Close navigation"
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-zlit-surface text-white transition-colors hover:bg-white/10"
-                >
-                  <X size={20} />
-                </button>
+        {/* Account Information */}
+        {user && (
+          <div className="shrink-0 border-b border-white/[0.06] px-5 py-5">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-zlit-red font-display text-lg font-bold text-white">
+                {accountName.charAt(0).toUpperCase()}
               </div>
 
-              {/* USER DETAILS */}
-              {user && (
-                <div className="shrink-0 border-b border-white/10 px-5 py-5">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-zlit-red font-display text-lg font-bold text-white">
-                      {accountName.charAt(0).toUpperCase()}
-                    </div>
-
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-white">
-                        {accountName}
-                      </p>
-                      <p className="truncate text-xs text-zlit-muted">
-                        {user.email}
-                      </p>
-
-                      {profile?.role === "admin" && (
-                        <p className="mt-1 text-[9px] font-bold uppercase tracking-widest text-zlit-red">
-                          Administrator
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* SCROLLABLE CONTENT */}
-              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5">
-                <p className="mb-3 px-3 text-[10px] font-bold uppercase tracking-[0.25em] text-zlit-muted">
-                  Explore
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold text-white">
+                  {accountName}
                 </p>
 
-                <div className="space-y-1">
-                  {links.map((link) => (
-                    <NavLink
-                      key={link.path}
-                      to={link.path}
-                      end={link.path === "/"}
-                      onClick={closeSidebar}
-                      className={({ isActive }) =>
-                        `flex min-h-12 items-center justify-between rounded-xl px-4 text-sm font-medium transition-colors ${
-                          isActive
-                            ? "bg-zlit-red/10 text-white"
-                            : "text-zlit-muted hover:bg-white/5 hover:text-white"
-                        }`
-                      }
-                    >
-                      {link.name}
-                      <ChevronRight size={16} className="opacity-40" />
-                    </NavLink>
-                  ))}
-                </div>
-
-                {user && (
-                  <>
-                    <div className="my-6 border-t border-white/10" />
-
-                    <p className="mb-3 px-3 text-[10px] font-bold uppercase tracking-[0.25em] text-zlit-muted">
-                      My Account
-                    </p>
-
-                    <div className="space-y-1">
-                      {accountLinks.map((item) => {
-                        const Icon = item.icon;
-
-                        return (
-                          <NavLink
-                            key={item.path}
-                            to={item.path}
-                            onClick={closeSidebar}
-                            className={({ isActive }) =>
-                              `flex min-h-12 items-center justify-between rounded-xl px-4 transition-colors ${
-                                isActive
-                                  ? "bg-zlit-red/10 text-white"
-                                  : "text-zlit-muted hover:bg-white/5 hover:text-white"
-                              }`
-                            }
-                          >
-                            <span className="flex items-center gap-3 text-sm font-medium">
-                              <Icon size={17} />
-                              {item.name}
-                            </span>
-                            <ChevronRight size={16} className="opacity-40" />
-                          </NavLink>
-                        );
-                      })}
-                    </div>
-                  </>
-                )}
-
-                {!user && (
-                  <Link
-                    to="/login"
-                    onClick={closeSidebar}
-                    className="zl-primary mt-6 flex w-full justify-center"
-                  >
-                    Sign in
-                  </Link>
-                )}
-              </div>
-
-              {/* SIDEBAR FOOTER */}
-              <div className="shrink-0 border-t border-white/10 p-5">
-                {user && (
-                  <button
-                    type="button"
-                    onClick={handleLogout}
-                    className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-red-500/20 bg-red-500/5 text-sm font-semibold text-red-400 transition-colors hover:bg-red-500/10"
-                  >
-                    <LogOut size={17} />
-                    Sign out
-                  </button>
-                )}
-
-                <p className="mt-4 text-center text-[9px] tracking-[0.2em] text-zlit-muted">
-                  ZLIT · DEFINE YOUR STYLE
+                <p className="truncate text-xs text-zlit-muted">
+                  {user.email}
                 </p>
+
+                {profile?.role === "admin" && (
+                  <span className="mt-1 inline-block text-[9px] font-bold uppercase tracking-widest text-zlit-red">
+                    Administrator
+                  </span>
+                )}
               </div>
-            </motion.aside>
+            </div>
           </div>
         )}
-      </AnimatePresence>
+
+        {/* Scrollable Navigation */}
+        <nav className="min-h-0 flex-1 space-y-7 overflow-y-auto overscroll-contain px-4 py-6">
+          {/* Explore */}
+          <div>
+            <p className="mb-3 px-3 text-[9px] font-bold tracking-[0.2em] text-zlit-muted">
+              EXPLORE
+            </p>
+
+            <div className="space-y-1">
+              {exploreLinks.map(({ name, path, icon: Icon }) => (
+                <NavLink
+                  key={path}
+                  to={path}
+                  end={path === "/"}
+                  onClick={closeSidebar}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 rounded-pill px-3 py-2.5 text-xs font-medium transition-colors ${
+                      isActive
+                        ? "bg-zlit-red text-white"
+                        : "text-zlit-muted hover:bg-white/[0.05] hover:text-white"
+                    }`
+                  }
+                >
+                  <Icon size={16} strokeWidth={1.8} />
+                  <span className="flex-1">{name}</span>
+                </NavLink>
+              ))}
+            </div>
+          </div>
+
+          {/* Account */}
+          {user && (
+            <div>
+              <p className="mb-3 px-3 text-[9px] font-bold tracking-[0.2em] text-zlit-muted">
+                MY ACCOUNT
+              </p>
+
+              <div className="space-y-1">
+                {accountLinks.map(({ name, path, icon: Icon }) => (
+                  <NavLink
+                    key={path}
+                    to={path}
+                    onClick={closeSidebar}
+                    className={({ isActive }) =>
+                      `flex items-center gap-3 rounded-pill px-3 py-2.5 text-xs font-medium transition-colors ${
+                        isActive
+                          ? "bg-zlit-red text-white"
+                          : "text-zlit-muted hover:bg-white/[0.05] hover:text-white"
+                      }`
+                    }
+                  >
+                    <Icon size={16} strokeWidth={1.8} />
+                    <span className="flex-1">{name}</span>
+                  </NavLink>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Shopping */}
+          <div>
+            <p className="mb-3 px-3 text-[9px] font-bold tracking-[0.2em] text-zlit-muted">
+              SHOPPING
+            </p>
+
+            <div className="space-y-1">
+              <NavLink
+                to="/cart"
+                onClick={closeSidebar}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 rounded-pill px-3 py-2.5 text-xs font-medium transition-colors ${
+                    isActive
+                      ? "bg-zlit-red text-white"
+                      : "text-zlit-muted hover:bg-white/[0.05] hover:text-white"
+                  }`
+                }
+              >
+                <ShoppingBag size={16} strokeWidth={1.8} />
+                <span className="flex-1">Shopping Bag</span>
+
+                {totalItems > 0 && (
+                  <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-zlit-red px-1.5 text-[10px] font-bold text-white">
+                    {totalItems > 99 ? "99+" : totalItems}
+                  </span>
+                )}
+              </NavLink>
+
+              <NavLink
+                to="/wishlist"
+                onClick={closeSidebar}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 rounded-pill px-3 py-2.5 text-xs font-medium transition-colors ${
+                    isActive
+                      ? "bg-zlit-red text-white"
+                      : "text-zlit-muted hover:bg-white/[0.05] hover:text-white"
+                  }`
+                }
+              >
+                <Heart size={16} strokeWidth={1.8} />
+                <span className="flex-1">Wishlist</span>
+              </NavLink>
+            </div>
+          </div>
+        </nav>
+
+        {/* Sidebar Footer */}
+        <div className="shrink-0 space-y-2 border-t border-white/[0.06] p-4">
+          {user ? (
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="flex w-full items-center gap-3 rounded-pill px-3 py-3 text-xs font-medium text-zlit-muted transition-colors hover:bg-white/5 hover:text-red-400"
+            >
+              <LogOut size={16} />
+              Sign out
+            </button>
+          ) : (
+            <Link
+              to="/login"
+              onClick={closeSidebar}
+              className="flex w-full items-center gap-3 rounded-pill px-3 py-3 text-xs font-medium text-zlit-muted transition-colors hover:bg-white/5 hover:text-white"
+            >
+              <UserRound size={16} />
+              Sign in
+            </Link>
+          )}
+
+          <p className="px-3 pt-2 text-[9px] font-bold tracking-[0.15em] text-zlit-muted">
+            ZLIT · DEFINE YOUR STYLE
+          </p>
+        </div>
+      </aside>
     </>
   );
 }

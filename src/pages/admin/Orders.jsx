@@ -59,6 +59,7 @@ export default function Orders() {
       await load();
     } catch (e) {
       setError(e.message || "Could not update order.");
+      console.error(e)
     } finally {
       setBusy("");
     }

@@ -33,6 +33,8 @@ export default function Navbar() {
   const { totalItems = 0 } = useCart();
   const navigate = useNavigate();
 
+  const isAdmin = user && profile?.role === "admin";
+
   const closeSidebar = () => setMobileOpen(false);
 
   const handleLogout = async () => {
@@ -56,7 +58,7 @@ export default function Navbar() {
         { name: "My Profile", path: "/profile", icon: UserRound },
         { name: "My Orders", path: "/orders", icon: Package },
         { name: "Wishlist", path: "/wishlist", icon: Heart },
-        ...(profile?.role === "admin"
+        ...(isAdmin
           ? [
               {
                 name: "Admin Dashboard",
@@ -128,6 +130,23 @@ export default function Navbar() {
                 {link.name}
               </NavLink>
             ))}
+
+            {/* Admin Dashboard - Admin Only */}
+            {isAdmin && (
+              <NavLink
+                to="/admin"
+                className={({ isActive }) =>
+                  `inline-flex items-center gap-2 text-[13px] font-semibold transition-colors ${
+                    isActive
+                      ? "text-zlit-red"
+                      : "text-zlit-muted hover:text-zlit-red"
+                  }`
+                }
+              >
+                <LayoutDashboard size={16} />
+                Admin Dashboard
+              </NavLink>
+            )}
           </nav>
 
           {/* Desktop Actions */}
@@ -197,7 +216,7 @@ export default function Navbar() {
         }`}
       />
 
-      {/* Mobile Sidebar - AdminSidebar Design */}
+      {/* Mobile Sidebar */}
       <aside
         aria-hidden={!mobileOpen}
         className={`fixed inset-y-0 left-0 z-[201] flex w-[260px] max-w-[85vw] flex-col border-r border-white/[0.06] bg-[#1D1D20] shadow-2xl transition-transform duration-200 ease-out md:hidden ${
@@ -245,7 +264,7 @@ export default function Navbar() {
                   {user.email}
                 </p>
 
-                {profile?.role === "admin" && (
+                {isAdmin && (
                   <span className="mt-1 inline-block text-[9px] font-bold uppercase tracking-widest text-zlit-red">
                     Administrator
                   </span>

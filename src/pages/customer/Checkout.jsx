@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -27,6 +28,9 @@ export default function Checkout() {
   const [error, setError] = useState("");
   const [redirecting, setRedirecting] = useState(false);
 
+  const [deliveryFee, setDeliveryFee] = useState(0);
+  const [loadingFee, setLoadingFee] = useState(true);
+
   const [form, setForm] = useState({
     fullName: profile?.full_name || "",
     email: user?.email || "",
@@ -36,6 +40,41 @@ export default function Checkout() {
     state: "",
     notes: "",
   });
+
+  const orderSubtotal = Number(subtotal || 0);
+  const orderTotal = orderSubtotal + Number(deliveryFee || 0);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadDeliveryFee = async () => {
+      try {
+        setLoadingFee(true);
+
+        const fee = await orderService.getDeliveryFee();
+
+        if (active) {
+          setDeliveryFee(fee);
+        }
+      } catch (err) {
+        console.error("Delivery fee error:", err);
+
+        if (active) {
+          setError(
+            "Unable to load the delivery fee. Please refresh and try again."
+          );
+        }
+      } finally {
+        if (active) setLoadingFee(false);
+      }
+    };
+
+    loadDeliveryFee();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -61,6 +100,11 @@ export default function Checkout() {
       return;
     }
 
+    if (loadingFee) {
+      setError("Please wait while we load the delivery fee.");
+      return;
+    }
+
     if (
       !form.fullName.trim() ||
       !form.phone.trim() ||
@@ -75,11 +119,10 @@ export default function Checkout() {
     try {
       setSubmitting(true);
 
-      // Create a checkout session, NOT an order.
       const session = await orderService.createCheckoutSession({
         customer: form,
         note: form.notes,
-        deliveryFee: 0,
+        deliveryFee,
       });
 
       if (!session?.id) {
@@ -88,10 +131,8 @@ export default function Checkout() {
 
       setRedirecting(true);
 
-      // Initialize Paystack using the session UUID.
       const payment = await orderService.initializePayment(session.id);
 
-      // Redirect to Paystack.
       window.location.assign(payment.authorization_url);
     } catch (err) {
       console.error("Checkout error:", err);
@@ -185,7 +226,6 @@ export default function Checkout() {
         className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8 items-start"
       >
         <div className="space-y-6">
-          {/* Contact information */}
           <section className="bg-[#242427] border border-white/5 rounded-2xl p-5 sm:p-7">
             <h2 className="text-lg font-semibold text-white mb-6">
               Contact information
@@ -222,7 +262,6 @@ export default function Checkout() {
             </div>
           </section>
 
-          {/* Delivery details */}
           <section className="bg-[#242427] border border-white/5 rounded-2xl p-5 sm:p-7">
             <h2 className="text-lg font-semibold text-white mb-6">
               Redeemer's University delivery details
@@ -284,13 +323,13 @@ export default function Checkout() {
 
           <Button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || loadingFee}
             className="w-full"
           >
-            {submitting ? (
+            {submitting || loadingFee ? (
               <span className="flex items-center justify-center gap-2">
                 <LoaderCircle size={18} className="animate-spin" />
-                Preparing payment...
+                {loadingFee ? "Loading delivery fee..." : "Preparing payment..."}
               </span>
             ) : (
               <span className="flex items-center justify-center gap-2">
@@ -305,14 +344,13 @@ export default function Checkout() {
           </p>
         </div>
 
-        {/* Order summary */}
         <aside className="bg-[#242427] border border-white/5 rounded-2xl p-5 sm:p-6 lg:sticky lg:top-24">
           <h2 className="text-lg font-semibold text-white mb-6">
             Order summary
           </h2>
 
           <div className="space-y-5">
-            {items.map((item,i) => (
+            {items.map((item) => (
               <div
                 key={item.id}
                 className="flex items-center gap-4"
@@ -342,8 +380,7 @@ export default function Checkout() {
                 </div>
 
                 <p className="text-sm font-semibold text-white whitespace-nowrap">
-                  ₦
-                  {(
+                  ₦{(
                     Number(item.price) * Number(item.quantity)
                   ).toLocaleString("en-NG")}
                 </p>
@@ -355,13 +392,17 @@ export default function Checkout() {
             <div className="flex justify-between text-sm">
               <span className="text-gray-400">Subtotal</span>
               <span className="text-white">
-                ₦{Number(subtotal || 0).toLocaleString("en-NG")}
+                ₦{orderSubtotal.toLocaleString("en-NG")}
               </span>
             </div>
 
             <div className="flex justify-between text-sm">
               <span className="text-gray-400">Delivery fee</span>
-              <span className="text-white">₦0</span>
+              <span className="text-white">
+                {loadingFee
+                  ? "Loading..."
+                  : `₦${deliveryFee.toLocaleString("en-NG")}`}
+              </span>
             </div>
 
             <div className="border-t border-white/10 pt-4 flex justify-between items-center">
@@ -370,7 +411,7 @@ export default function Checkout() {
               </span>
 
               <span className="text-xl font-bold text-[#C8102E]">
-                ₦{Number(subtotal || 0).toLocaleString("en-NG")}
+                ₦{orderTotal.toLocaleString("en-NG")}
               </span>
             </div>
           </div>

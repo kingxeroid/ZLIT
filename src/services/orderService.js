@@ -23,6 +23,23 @@ async function getEdgeFunctionError(error) {
 }
 
 export const orderService = {
+  async getDeliveryFee() {
+  const { data, error } = await supabase
+    .from("site_settings")
+    .select("setting_value")
+    .eq("setting_key", "delivery_fee")
+    .maybeSingle();
+
+  if (error) throw error;
+
+  const fee = Number(data?.setting_value ?? 0);
+
+  if (!Number.isFinite(fee) || fee < 0) {
+    throw new Error("The store delivery fee is invalid.");
+  }
+
+  return fee;
+},
   /**
    * Creates a checkout session without creating an order.
    * Returns the session UUID from create_zlit_checkout_session.
@@ -47,6 +64,7 @@ export const orderService = {
     if (!user) {
       throw new Error("Please log in before checking out.");
     }
+    
 
     const { data: sessionId, error } = await supabase.rpc(
       "create_zlit_checkout_session",
@@ -204,3 +222,4 @@ export const orderService = {
     return data;
   },
 };
+

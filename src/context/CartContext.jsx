@@ -4,6 +4,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -29,22 +30,43 @@ function sameCartItem(a, b) {
   );
 }
 
+function mapCartRows(data) {
+  return (data || [])
+    .filter((row) => row.products)
+    .map((row) => ({
+      ...row.products,
+      id: row.product_id,
+      variant_id: row.variant_id,
+      selectedSize: row.product_variants?.size || null,
+      selectedColor: row.product_variants?.color || null,
+      price: Number(
+        row.product_variants?.price ?? row.products.price
+      ),
+      quantity: Number(row.quantity),
+      cart_row_id: row.id,
+    }));
+}
+
 export function CartProvider({ children }) {
   const { user } = useAuth();
 
   const [items, setItems] = useState(readCart);
   const [cartReady, setCartReady] = useState(false);
 
-  // Persist local cart.
+  const cartRequest = useRef(0);
+
+  // Persist the current cart locally.
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
   }, [items]);
 
-  // Load or migrate the authenticated user's cart.
+  // Load the authenticated user's cart from Supabase.
   useEffect(() => {
     let active = true;
 
     const loadCart = async () => {
+      const requestId = ++cartRequest.current;
+
       if (!user?.id) {
         setCartReady(true);
         return;
@@ -78,7 +100,12 @@ export function CartProvider({ children }) {
         `)
         .eq("user_id", user.id);
 
-      if (!active) return;
+      if (
+        !active ||
+        requestId !== cartRequest.current
+      ) {
+        return;
+      }
 
       if (error) {
         console.error("Cart loading failed:", error.message);
@@ -86,45 +113,13 @@ export function CartProvider({ children }) {
         return;
       }
 
-      if (data?.length) {
-        const mapped = data
-          .filter((row) => row.products)
-          .map((row) => ({
-            ...row.products,
-            id: row.product_id,
-            variant_id: row.variant_id,
-            selectedSize: row.product_variants?.size || null,
-            selectedColor: row.product_variants?.color || null,
-            price: Number(
-              row.product_variants?.price ?? row.products.price
-            ),
-            quantity: Number(row.quantity),
-            cart_row_id: row.id,
-          }));
+      // Important:
+      // Never migrate old localStorage items into an empty
+      // authenticated cart. An empty database cart may mean
+      // checkout was successfully completed.
+      setItems(mapCartRows(data));
 
-        setItems(mapped);
-      } else {
-        const localItems = readCart();
-
-        if (localItems.length) {
-          for (const item of localItems) {
-            const { error: insertError } = await supabase
-              .from("cart_items")
-              .insert({
-                user_id: user.id,
-                product_id: item.id,
-                variant_id: item.variant_id || null,
-                quantity: item.quantity,
-              });
-
-            if (insertError) {
-              console.error("Cart migration failed:", insertError.message);
-            }
-          }
-        }
-      }
-
-      if (active) setCartReady(true);
+      setCartReady(true);
     };
 
     loadCart();
@@ -168,7 +163,8 @@ export function CartProvider({ children }) {
         const { error: updateError } = await supabase
           .from("cart_items")
           .update({ quantity })
-          .eq("id", data.id);
+          .eq("id", data.id)
+          .eq("user_id", user.id);
 
         if (updateError) throw updateError;
       } else {
@@ -189,7 +185,10 @@ export function CartProvider({ children }) {
 
   const addToCart = useCallback(
     (product) => {
-      const quantity = Math.max(1, Number(product.quantity || 1));
+      const quantity = Math.max(
+        1,
+        Number(product.quantity || 1)
+      );
 
       const existing = items.find((item) =>
         sameCartItem(item, product)
@@ -198,7 +197,10 @@ export function CartProvider({ children }) {
       const next = existing
         ? items.map((item) =>
             sameCartItem(item, product)
-              ? { ...item, quantity: item.quantity + quantity }
+              ? {
+                  ...item,
+                  quantity: item.quantity + quantity,
+                }
               : item
           )
         : [...items, { ...product, quantity }];
@@ -238,7 +240,9 @@ export function CartProvider({ children }) {
   const removeFromCart = useCallback(
     (product) => {
       setItems((current) =>
-        current.filter((item) => !sameCartItem(item, product))
+        current.filter(
+          (item) => !sameCartItem(item, product)
+        )
       );
 
       if (user?.id) {
@@ -253,28 +257,86 @@ export function CartProvider({ children }) {
           : query.is("variant_id", null);
 
         query.then(({ error }) => {
-          if (error) console.error("Cart delete failed:", error.message);
+          if (error) {
+            console.error(
+              "Cart delete failed:",
+              error.message
+            );
+          }
         });
       }
     },
     [user?.id]
   );
 
+  // Clear all cart items when explicitly requested.
   const clearCart = useCallback(async () => {
     setItems([]);
 
-    if (user?.id) {
-      const { error } = await supabase
-        .from("cart_items")
-        .delete()
-        .eq("user_id", user.id);
+    if (!user?.id) return;
 
-      if (error) console.error("Cart clear failed:", error.message);
+    const { error } = await supabase
+      .from("cart_items")
+      .delete()
+      .eq("user_id", user.id);
+
+    if (error) {
+      console.error("Cart clear failed:", error.message);
+      throw error;
     }
   }, [user?.id]);
 
+  // Reload the cart from Supabase after payment confirmation.
+  const refreshCart = useCallback(async () => {
+    if (!user?.id) {
+      setItems([]);
+      return;
+    }
+
+    const requestId = ++cartRequest.current;
+
+    const { data, error } = await supabase
+      .from("cart_items")
+      .select(`
+        id,
+        product_id,
+        variant_id,
+        quantity,
+        products (
+          id,
+          name,
+          slug,
+          price,
+          compare_at_price,
+          image_url,
+          images
+        ),
+        product_variants (
+          id,
+          size,
+          color,
+          price,
+          stock_quantity
+        )
+      `)
+      .eq("user_id", user.id);
+
+    if (error) throw error;
+
+    // Ignore an older request if another cart refresh started.
+    if (requestId !== cartRequest.current) return;
+
+    setItems(mapCartRows(data));
+    setCartReady(true);
+  }, [user?.id]);
+
   const totalItems = useMemo(
-    () => items.reduce((sum, item) => sum + Number(item.quantity || 0), 0),
+    () =>
+      items.reduce(
+        (sum, item) =>
+          sum + Number(item.quantity || 0),
+        0
+      ),
     [items]
   );
 
@@ -282,7 +344,9 @@ export function CartProvider({ children }) {
     () =>
       items.reduce(
         (sum, item) =>
-          sum + Number(item.price || 0) * Number(item.quantity || 0),
+          sum +
+          Number(item.price || 0) *
+            Number(item.quantity || 0),
         0
       ),
     [items]
@@ -298,6 +362,7 @@ export function CartProvider({ children }) {
       updateQuantity,
       removeFromCart,
       clearCart,
+      refreshCart,
     }),
     [
       items,
@@ -308,6 +373,7 @@ export function CartProvider({ children }) {
       updateQuantity,
       removeFromCart,
       clearCart,
+      refreshCart,
     ]
   );
 

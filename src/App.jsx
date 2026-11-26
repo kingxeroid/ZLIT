@@ -5,6 +5,7 @@ import { useAuth } from "./context/AuthContext";
 import MainLayout from "./layouts/MainLayout";
 import AuthLayout from "./layouts/AuthLayout";
 import AdminLayout from "./layouts/AdminLayout";
+import PaymentCallback from "./pages/customer/PaymentCallback";
 
 const Home = lazy(() => import("./pages/customer/Home"));
 const Shop = lazy(() => import("./pages/customer/Shop"));
@@ -101,6 +102,7 @@ function AnimatedRoutes() {
       <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
       <Route path="/orders/:id" element={<ProtectedRoute><OrderDetails /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+      <Route path="/payment/callback" element={<PaymentCallback />}/>
       <Route path="*" element={<NotFound />} />
     </Route>
     <Route element={<AuthLayout />}>

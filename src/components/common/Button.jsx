@@ -1,14 +1,11 @@
+
 import { motion } from "framer-motion";
 
 const styles = {
-  primary:
-    "bg-zlit-red text-white hover:bg-red-800",
-  secondary:
-    "bg-zlit-surface text-zlit-white hover:bg-zlit-hover",
-  outline:
-    "border border-white/15 text-zlit-white hover:bg-white/5",
-  ghost:
-    "text-zlit-muted hover:bg-white/5 hover:text-white",
+  primary: "bg-zlit-red text-white hover:bg-red-800",
+  secondary: "bg-zlit-surface text-zlit-white hover:bg-zlit-hover",
+  outline: "border border-white/15 text-zlit-white hover:bg-white/5",
+  ghost: "text-zlit-muted hover:bg-white/5 hover:text-white",
 };
 
 export default function Button({
@@ -18,6 +15,7 @@ export default function Button({
   size = "md",
   loading = false,
   disabled = false,
+  block = false,
   className = "",
   ...props
 }) {
@@ -33,11 +31,12 @@ export default function Button({
       type={type}
       disabled={disabled || loading}
       className={`
-        inline-flex items-center justify-center gap-2
+        ${block ? "w-full" : "inline-flex"}
+        items-center justify-center gap-2
         rounded-full font-semibold transition duration-200
         disabled:cursor-not-allowed disabled:opacity-50
-        ${styles[variant]}
-        ${sizes[size]}
+        ${styles[variant] || styles.primary}
+        ${sizes[size] || sizes.md}
         ${className}
       `}
       {...props}
